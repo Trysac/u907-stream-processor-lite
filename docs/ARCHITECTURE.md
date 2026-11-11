@@ -1,29 +1,15 @@
 # Architecture
 
-## Purpose
+## Components
 
-`trysac-stream-processor-lite` is a small, dependency-free Python library: Event-time stream windows (tumbling, sliding, session) with watermarks, late-data side output and exactly-once file output across restarts
+1. **Window Specifications**: Immutable dataclasses in `stream_processor_lite.windows` (Tumbling, Sliding, Session).
+2. **Source Engine**: `stream_processor_lite.source.JsonlSource` provides byte-limited, line-indexed stream iteration.
+3. **Processing Pipeline**: `stream_processor_lite.pipeline.Pipeline` orchestrates watermark tracking, state accumulators, and epoch-based atomic commits.
 
-## Shape
+## Epoch-based Commit Protocol
 
-```text
-caller code --> stream_processor_lite (public API in __init__.py)
-                    |
-                    +-- pure functions, no I/O, no global state
-```
-
-- **Public API**: the names listed in `__all__` of `src/stream_processor_lite/__init__.py`. Anything else is
-  internal and may change without a major version.
-- **Errors**: invalid input raises built-in exceptions (`ValueError`, `TypeError`) with a clear
-  message; the library never prints or exits.
-- **Side effects**: none. If a feature needs I/O, isolate it in its own module behind a small
-  interface and record the choice in an ADR.
-
-## Quality contract
-
-`scripts/check.py` is the single definition of the gates; `fabrica.json` tells the factory and CI
-how to run it. See [TESTING.md](TESTING.md).
-
-## Decisions
-
-Architecture decisions are recorded in [decisions/](decisions/) as numbered ADRs.
+Every `checkpoint_interval` lines, the pipeline performs an atomic update:
+1. Flush `part-e.jsonl.tmp` and `late-e.jsonl.tmp` to disk.
+2. Serialize current watermark, source offset, and window accumulators to `checkpoint-e.json.tmp`.
+3. `fsync` all files.
+4. Atomic `os.replace` of the checkpoint file, followed by the part files.
