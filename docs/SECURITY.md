@@ -1,22 +1,15 @@
-# Security notes
+# Security & Resource Bounds
 
-## Threat model
+## Threat Model
 
-`trysac-stream-processor-lite` is a pure library without I/O. The main risks are:
+### Defended
 
-- **Supply chain**: a compromised dependency or CI action. Mitigation: no runtime dependencies,
-  Dependabot weekly updates, actions pinned to major versions, minimal workflow permissions.
-- **Leaked secrets**: tokens committed by mistake. Mitigation: `gitleaks` runs in the local gates
-  and in CI; `.env` files are git-ignored.
-- **Insecure code**: shell injection, weak hashes, unsafe deserialization. Mitigation: Ruff's
-  `S` rules in lint and a `security` gate (Bandit, high severity fails, `# nosec` ignored); fix the
-  code instead of silencing it.
-- **Untrusted input**: callers may pass hostile strings. Mitigation: validate input and fail with
-  explicit exceptions; never `eval`, `exec` or deserialize untrusted data.
+- **Memory Exhaustion**: The library enforces `max_line_bytes` (65,536 bytes) per input line to prevent processing maliciously large chunks, and `max_open_windows` (100,000 windows) to bound heap memory usage. Exceeding these raises `StreamError`.
+- **Input Validation**: Strict enforcement of integer timestamps (`>=0`), key types (`str` | `int`), and numeric aggregation fields. `bool` types are explicitly rejected as `bad_event`.
+- **Checkpoint Integrity**: Checkpoint files are written atomically using `os.replace` to prevent partial reads or corrupt states from causing data loss.
 
-## Publishing
+### Not Defended
 
-Releases are published to PyPI with trusted publishing (OIDC) when available, never with a
-long-lived token stored in the repository.
-
-To report a vulnerability, see [SECURITY.md](../SECURITY.md).
+- **Code Injection**: The `json.loads` calls do not sanitize for object depth or malicious structures beyond basic parsing requirements.
+- **File System Tampering**: The library assumes a trusted local output directory. Unauthorized modification of checkpoint files may lead to data inconsistency.
+- **Denial of Service**: The process itself can be starved of CPU or disk I/O by the host operating system.

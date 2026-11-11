@@ -1,24 +1,28 @@
-"""
-Event-time stream windows (tumbling, sliding, session) with watermarks, late-data side output and
-exactly-once file output across restarts
-"""
+"""Event-time stream windows with watermarks, late-data side output and atomic checkpointing."""
 
 from __future__ import annotations
 
-__all__ = ["__version__", "normalize"]
+import logging
+
+from .errors import ErrorCode, StreamError
+from .pipeline import Pipeline, batch_compute, read_output
+from .source import JsonlSource
+from .windows import Session, Sliding, Tumbling, WindowSpec
+
+logging.getLogger(__name__).addHandler(logging.NullHandler())
+
+__all__ = [
+    "ErrorCode",
+    "JsonlSource",
+    "Pipeline",
+    "Session",
+    "Sliding",
+    "StreamError",
+    "Tumbling",
+    "WindowSpec",
+    "__version__",
+    "batch_compute",
+    "read_output",
+]
 
 __version__ = "0.1.0"
-
-
-def normalize(value: str) -> str:
-    """Return ``value`` trimmed and lower-cased.
-
-    Placeholder API created by the template: replace it with the utility's real behavior.
-
-    Raises:
-        ValueError: if ``value`` is empty or only whitespace.
-    """
-    cleaned = value.strip()
-    if not cleaned:
-        raise ValueError("value must not be empty")
-    return cleaned.lower()

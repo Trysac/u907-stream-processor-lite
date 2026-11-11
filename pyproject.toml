@@ -19,6 +19,9 @@ classifiers = [
 ]
 dependencies = []
 
+[project.scripts]
+stream-processor-lite = "stream_processor_lite.__main__:main"
+
 [project.urls]
 Homepage = "https://github.com/Trysac/u907-stream-processor-lite"
 Source = "https://github.com/Trysac/u907-stream-processor-lite"
@@ -39,6 +42,7 @@ include = ["src", "tests", "docs", "README.md", "LICENSE", "CHANGELOG.md", "SECU
 [dependency-groups]
 dev = [
     "bandit>=1.9.4",
+    "hypothesis>=6,<7",
     "mypy>=2.4.1",
     "pip-audit>=2.10.1",
     "pytest>=9.2.0",

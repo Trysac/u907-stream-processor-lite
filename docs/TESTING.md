@@ -3,27 +3,21 @@
 ## Running
 
 ```sh
-uv run pytest --cov=stream_processor_lite   # tests with coverage report
-uv run python scripts/check.py      # every gate, as CI and the factory run it
+uv run pytest --cov=stream_processor_lite
+uv run python scripts/check.py
 ```
 
 ## Policy
 
-- Branch coverage of `src/stream_processor_lite` must stay at or above 80 %; the gate fails below it.
-- Tests exercise the public API (`import stream_processor_lite`) and assert every observable effect:
-  return values, raised exceptions and their messages.
-- Each bug fix starts with a failing test that reproduces it.
-- Tests are deterministic: no network, no wall clock, no dependence on test order.
+- Branch coverage must be >= 80%.
+- Tests must be deterministic (no network, no wall clock).
+- Each bug fix must be preceded by a failing regression test.
 
-## Tiers
+## Coverage
 
-- Local tier (every gate run, coverage measured here): unit and property tests, plus conformance on small
-  fixtures kept in the repository.
-- CI tier: conformance that needs an external tool or a download. Mark them `@pytest.mark.conformance`; `scripts/check.py` deselects them locally
-  (unless `FABRICA_CI=1`). The CI `conformance` job sets `FABRICA_CI=1` and runs the full suite. Tools are installed
-  by the optional `ci/conformance-setup.sh` (bash, CI only; verify every download against a pinned SHA-256), and
-  tagged tests skip cleanly when their tool is missing.
+Tests are located in `tests/` and mirror the package structure:
 
-## Layout
-
-`tests/test_<module>.py` mirrors each public module. Shared fixtures go in `tests/conftest.py`.
+- `tests/test_pipeline.py`: Validates the 4-step atomic commit protocol and state restoration logic.
+- `tests/test_source.py`: Verifies line-offset replayability, byte limit enforcement, and line parsing.
+- `tests/test_windows.py`: Checks window calculation logic for Tumbling, Sliding, and Session triggers.
+- `tests/test_errors.py`: Asserts correct `StreamError` propagation for invalid inputs and corrupt checkpoints.
